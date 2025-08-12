@@ -654,5 +654,32 @@ namespace aerial_robot_model {
     return joint_positions;
   }
 
+void RobotModel::convertFromCoGToLink1(const tf::Vector3& cog_pos_in_w, const tf::Vector3& cog_vel_in_w,
+                               const tf::Quaternion& cog_quat, const tf::Vector3& cog_omega,
+                               tf::Vector3& link1_pos_in_w, tf::Vector3& link1_vel_in_w,
+                               tf::Quaternion& link1_quat, tf::Vector3& link1_omega) const
+  {
+    KDL::Frame link1_frame = seg_tf_map_.at("link1");
+    KDL::Frame cog_to_link1 = cog_.Inverse() * link1_frame;
+
+    // get the conversion from CoG to end-effector (EE) contact frame
+    double qw, qx, qy, qz;
+    cog_to_link1.M.GetQuaternion(qx, qy, qz, qw);  // qxyzw
+
+    tf::Vector3 p_link1_in_cog(cog_to_link1.p.x(), cog_to_link1.p.y(), cog_to_link1.p.z());
+    tf::Matrix3x3 cog_to_link1_mtx;
+    cog_to_link1_mtx.setRotation(tf::Quaternion(qx, qy, qz, qw));  // qxyzw
+
+    // make conversion
+    tf::Matrix3x3 cog_mtx;
+    cog_mtx.setRotation(cog_quat);
+
+    link1_pos_in_w = cog_pos_in_w + cog_mtx * p_link1_in_cog;
+    link1_vel_in_w = cog_vel_in_w + cog_mtx * cog_omega.cross(p_link1_in_cog);
+    tf::Matrix3x3 ee_mtx = cog_mtx * cog_to_link1_mtx;
+    ee_mtx.getRotation(link1_quat);
+    link1_omega = cog_to_link1_mtx.inverse() * cog_omega;
+  }
+
 } //namespace aerial_robot_model
 
