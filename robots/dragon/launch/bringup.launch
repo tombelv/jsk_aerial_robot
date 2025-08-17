@@ -17,6 +17,8 @@
   <arg name="spawn_y" default="0.0"/>
   <arg name="spawn_z" default="0.0"/>
   <arg name="spawn_yaw" default="0.0"/>
+  <arg name="joint_init_list" default="-J joint1_yaw 1.5708 -J joint2_yaw 1.5708 -J joint3_yaw 1.5708"/>
+
   <arg name="robot_id" default="" />
   <arg name="robot_ns" value="dragon$(arg robot_id)" />
   <arg name="config_dir" default="$(find dragon)/config/$(arg type)" />
@@ -104,6 +106,8 @@
     <arg name="spawn_y" value="$(arg spawn_y)" />
     <arg name="spawn_z" value="$(arg spawn_z)" />
     <arg name="spawn_yaw" value="$(arg spawn_yaw)" />
+
+    <arg name="joint_init_list" value="$(arg joint_init_list)" />
   </include>
 
   ########## Simulation in Mujoco #########
@@ -117,6 +121,3 @@
   <node pkg="dragon" type="simple_demo.py" name="simple_demo" ns="$(arg robot_ns)" output="screen" if="$(arg demo)"/>
 
 </launch>
-
-
-
