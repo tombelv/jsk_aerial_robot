@@ -56,6 +56,9 @@
 #include <urdf/model.h>
 #include <vector>
 
+// for contact point
+#include <tf/tf.h>
+
 namespace aerial_robot_model {
 
   //Basic Aerial Robot Model
@@ -167,6 +170,11 @@ namespace aerial_robot_model {
     virtual bool stabilityCheck(bool verbose = true);
 
     KDL::JntArray convertEigenToKDL(const Eigen::VectorXd& joint_vector);
+
+    void convertFromCoGToLink1(const tf::Vector3& cog_pos_in_w, const tf::Vector3& cog_vel_in_w,
+                               const tf::Quaternion& cog_quat, const tf::Vector3& cog_omega,
+                               tf::Vector3& link1_pos_in_w, tf::Vector3& link1_vel_in_w,
+                               tf::Quaternion& link1_quat, tf::Vector3& link1_omega) const;
 
   private:
 

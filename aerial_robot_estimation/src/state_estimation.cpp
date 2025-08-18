@@ -88,6 +88,7 @@ void StateEstimator::initialize(ros::NodeHandle nh, ros::NodeHandle nh_private, 
   baselink_odom_pub_ = nh_.advertise<nav_msgs::Odometry>("uav/baselink/odom", 1);
   cog_odom_pub_ = nh_.advertise<nav_msgs::Odometry>("uav/cog/odom", 1);
   full_state_pub_ = nh_.advertise<aerial_robot_msgs::States>("uav/full_state", 1);
+  link1_odom_pub_ = nh_.advertise<nav_msgs::Odometry>("uav/link1/odom", 1);
 
   nhp_.param("tf_prefix", tf_prefix_, std::string(""));
 
@@ -220,6 +221,30 @@ void StateEstimator::statePublish(const ros::TimerEvent & e)
   cog_odom_pub_.publish(odom_state);
 
   prev_pub_stamp = imu_stamp;
+
+  /* Create an odom to the end of one link */
+  auto seg_tf_map = robot_model_->getSegmentsTf();
+  if (seg_tf_map.find("link1") != seg_tf_map.end())
+  {
+    // make conversion
+    tf::Vector3 target_link1_pos_in_w, target_link1_vel_in_w, target_link1_omega;
+    tf::Quaternion target_link1_quat;
+    robot_model_->convertFromCoGToLink1(
+      getPos(Frame::COG, estimate_mode_),getVel(Frame::COG, estimate_mode_),
+      q, getAngularVel(Frame::COG, estimate_mode_),
+      target_link1_pos_in_w, target_link1_vel_in_w, target_link1_quat, target_link1_omega);
+
+    // ee_contact_odom_pub_
+    odom_state.child_frame_id = tf::resolve(tf_prefix_, std::string("link1"));
+    // Rotation
+    tf::quaternionTFToMsg(target_link1_quat, odom_state.pose.pose.orientation);
+    tf::vector3TFToMsg(target_link1_omega, odom_state.twist.twist.angular);
+    // Translation
+    tf::pointTFToMsg(target_link1_pos_in_w, odom_state.pose.pose.position);
+    tf::vector3TFToMsg(target_link1_vel_in_w, odom_state.twist.twist.linear);
+
+    link1_odom_pub_.publish(odom_state);
+  }
 }
 
 
